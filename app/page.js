@@ -1,113 +1,256 @@
-import Image from "next/image";
+"use client";
+import React, { useEffect } from "react";
+import { Currency } from '@/lib/utils';
+import { useState, useRef } from "react";
+import Menu from "@/components/menu";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp, getDocs } from "firebase/firestore";
 
 export default function Home() {
+  const [showIncomeMenu, setshowIncomeMenu] = useState(false);
+  const [showExpenseMenu, setshowExpenseMenu] = useState(false);
+  const amountRef = useRef();
+  const descriptionRef = useRef();
+  const categoryRef = useRef();
+  const amountExRef = useRef();
+  const descriptioExRef = useRef();
+  const categoryExRef = useRef();
+  const dateExRef = useRef();
+  const [income, showIncome] = useState([]);
+  const dateRef = useRef();
+  const [expense, showExpense] = useState([]);
+  const [balance, setBalance] = useState(0);
+  
+
+
+  const addIncomeHandler = async (e) => {
+    e.preventDefault()
+  
+    const newIncome = {
+      amount: +amountRef.current.value,
+      description: descriptionRef.current.value,
+      createdAt: dateRef.current.value ? new Date(dateRef.current.value) : serverTimestamp(),
+      category: categoryRef.current.value,
+    };
+
+    const collectionRef = collection(db, "income");
+
+    try {
+      const docsSnap = await addDoc(collectionRef, newIncome);
+
+      showIncome((prevState) => {
+        return [
+          ...prevState,
+          {
+            id: docsSnap.id,
+            ...newIncome,
+          },
+        ];
+      });
+      descriptionRef.current.value = "";
+      amountRef.current.value = "";
+      dateRef.current.value = "";
+      setshowIncomeMenu(false);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  useEffect(() => {
+    const getIncomeData = async () => {
+      const collectionData = collection(db, "income");
+      const docsSnap = await getDocs(collectionData);
+      const data = docsSnap.docs.map(doc => {
+        const createdAt = doc.data().createdAt ? new Date(doc.data().createdAt.toMillis()) : null;
+        return {
+          id: doc.id,
+          ...doc.data(),
+          createdAt: createdAt,
+        };
+      });
+      showIncome(data);
+    };
+    getIncomeData();
+  }, []);
+
+  useEffect(() => {
+    const newBalance = income.reduce((total, i) => {
+      return total + i.amount;
+    }, 0) - expense.reduce((total, e) => {
+      return total + e.amount;
+    }, 0)
+    setBalance(newBalance)
+  }, [expense, income])
+
+  const addExpenseHandler = async (e) => {
+    e.preventDefault()
+    const newExpense = {
+      amount: +amountExRef.current.value,
+      description: descriptioExRef.current.value,
+      createdAt: dateExRef.current.value ? new Date(dateExRef.current.value) : serverTimestamp(),
+      category: categoryExRef.current.value,
+    };
+
+    const collectionExRef = collection(db, "expense");
+
+    try {
+      const docsSnap = await addDoc(collectionExRef, newExpense);
+
+      showExpense((prevState) => {
+        return [
+          ...prevState,
+          {
+            id: docsSnap.id,
+            ...newExpense,
+          },
+        ];
+      });
+      descriptioExRef.current.value = "";
+      amountExRef.current.value = "";
+      dateExRef.current.value = "";
+      setshowExpenseMenu(false);
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  useEffect(() => {
+    const getExpenseData = async () => {
+      const collectionData = collection(db, "expense");
+      const docsSnap = await getDocs(collectionData);
+      const data = docsSnap.docs.map(doc => {
+        const createdAt = doc.data().createdAt ? new Date(doc.data().createdAt.toMillis()) : null;
+        return {
+          id: doc.id,
+          ...doc.data(),
+          createdAt: createdAt,
+        };
+      });
+      showExpense(data);
+    };
+    getExpenseData();
+  }, []);
+    
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <>
+      <Menu show={showIncomeMenu} onClose={setshowIncomeMenu}>
+        <form onSubmit={addIncomeHandler} className="flex flex-col gap-3">
+          <label htmlFor="amount">Income amount</label>
+          <input 
+          ref={amountRef}
+          name="amount"
+          type="number"
+          min={10000}
+          step={1000}
+          placeholder="Enter income amount"
+          className="border-2 border-black rounded-2xl px-3"
+          required
+          />
+          <label htmlFor="description">Income description</label>
+          <input 
+          ref={descriptionRef}
+          name="description"
+          type="text"
+          placeholder="Enter income description"
+          className="border-2 border-black rounded-2xl px-3 capitalize"
+          required
+          />
+          <label htmlFor="date">Income date</label>
+          <input
+            ref={dateRef}
+            name="date"
+            type="date"
+            className="border-2 border-black rounded-2xl px-3"
+            required
+          />
+          <label className="category">Income Category</label>
+          <input
+            ref={categoryRef}
+            name="category"
+            type="input"
+            placeholder="Enter income category"
+            className="border-2 border-black rounded-2xl px-3 capitalize"
+            required
+          />
+          <button className="rounded-2xl border-black border-2 w-40 mx-auto mt-5">Submit</button>
+        </form>
+      </Menu>
+      <Menu show={showExpenseMenu} onClose={setshowExpenseMenu}>
+        <form onSubmit={addExpenseHandler} className="flex flex-col gap-3">
+          <label htmlFor="expense amount">Expense amount</label>
+          <input 
+          ref={amountExRef}
+          name="amount"
+          type="number"
+          min={10000}
+          step={1000}
+          placeholder="Enter expense amount"
+          className="border-2 border-black rounded-2xl px-3"
+          required
+          />
+          <label htmlFor="description">Expense description</label>
+          <input 
+          ref={descriptioExRef}
+          name="description"
+          type="text"
+          placeholder="Enter expense description"
+          className="border-2 border-black rounded-2xl px-3 capitalize"
+          required
+          />
+          <label htmlFor="expense date">Expense date</label>
+          <input
+            ref={dateExRef}
+            name="date"
+            type="date"
+            className="border-2 border-black rounded-2xl px-3"
+            required
+          />
+          <label className="expense category">Expense Category</label>
+          <input
+            ref={categoryExRef}
+            name="category"
+            type="input"
+            placeholder="Enter expense category"
+            className="border-2 border-black rounded-2xl px-3 capitalize"
+            required
+          />
+          <button className="rounded-2xl border-black border-2 w-40 mx-auto mt-5">Submit</button>
+        </form>
+      </Menu>
+      <main className="flex min-h-screen flex-col items-center p-15">
+        <div className="z-10 max-w-5xl w-full  text-sm flex flex-col">
+          <h1 className="text-center text-3xl md:text-7xl text-black font-extrabold mb-5">Welcome To MoneyRizz</h1>
+          <p className="text-gray-300 font-bold text-center text-xl md:text-3xl mb-5">Track your money effortlessly</p>
+          {/* Balance section */}
+          <div className="flex flex-wrap mx-auto justify-center gap-x-1 md:gap-x-5">
+            <div className="mt-10 flex flex-col border-2 w-fit px-3 rounded-xl border-black gap-2">
+              <p className="text-xl md:text-3xl font-bold text-center">Balance</p>
+              <p className="text-center md:text-2xl font-bold">{Currency(balance)}</p>
+            </div>
+            <div className="mt-10 flex flex-col border-2 w-fit px-3 rounded-xl border-black gap-2">
+              <p className="text-xl md:text-3xl font-bold text-center">Expense</p>
+              <p className="text-center md:text-2xl font-bold">{Currency(expense.reduce((total, e) => total + e.amount, 0))}</p>
+            </div>
+            <div className="mt-10 mx-auto flex-col border-2 w-fit px-3 rounded-xl border-black gap-2">
+              <p className="text-xl md:text-3xl font-bold text-center mb-2">Income</p>
+              <p className="text-center md:text-2xl font-bold">{Currency(income.reduce((total, i) => total + i.amount, 0))}</p>
+            </div>
+          </div>
+          {/* Button section */}
+          <div className="flex flex-row mx-auto gap-x-3 mt-10">
+            <button
+              onClick={() => {
+                setshowIncomeMenu(true);
+              }}
+              className="bg-black text-white hover:bg-blue-500 rounded-full p-4">Add Income</button>
+            <button
+              onClick={() => {
+                setshowExpenseMenu(true);
+              }}
+             className="bg-black text-white hover:bg-red-500 rounded-full p-4">Add Expense</button>
+          </div>
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
