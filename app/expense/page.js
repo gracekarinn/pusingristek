@@ -10,7 +10,6 @@ export default function Page() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [categories, setCategories] = useState([]);
-  const [newCategory, setNewCategory] = useState("");
 
   useEffect(() => {
     const getExpenseData = async () => {
@@ -26,7 +25,7 @@ export default function Page() {
       });
       showExpenses(data);
 
-      // Extract unique categories from the expense data
+   
       const uniqueCategories = Array.from(new Set(data.map(i => i.category).filter(Boolean)));
       setCategories(["", ...uniqueCategories]);
     };
@@ -51,42 +50,31 @@ export default function Page() {
     setSelectedCategory(category);
   }
 
-  const handleNewCategoryChange = (event) => {
-    setNewCategory(event.target.value);
-  }
-
-  const handleAddCategory = () => {
-    if (newCategory.trim() !== "") {
-      setCategories(prevCategories => [...prevCategories, newCategory]);
-      setNewCategory("");
-    }
-  }
-
   const filteredExpenses = expenses.filter(i => 
     i.description.toLowerCase().includes(searchQuery.toLowerCase()) &&
     (selectedCategory === "" || i.category === selectedCategory)
   );
 
   return (
-    <div className="flex flex-col mt-20">
+    <div className="container mx-auto p-4">
       <h2 className="text-center text-black font-bold text-4xl mb-4">Your Expense History</h2>
-      <div className="flex items-center mb-4">
+      <div className="mb-4">
         <input
           type="text"
           placeholder="Search by description..."
-          className="px-4 py-2 border border-gray-300 rounded-md mx-auto"
+          className="px-4 py-2 border border-gray-300 rounded-md w-full"
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
         />
       </div>
-      <div className="relative bg-white border border-gray-300 mx-10 p-4 rounded-md shadow-md mb-4">
+      <div className="bg-white border border-gray-300 p-4 rounded-md shadow-md mb-4">
         <div className="flex justify-between items-start mb-3">
           <div className="flex flex-col items-start">
             <p className="text-lg font-semibold">Filter by Category:</p>
             <select
               value={selectedCategory}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md mb-2"
+              className="px-4 py-2 border border-gray-300 rounded-md mb-2 w-full"
             >
               {categories.map((category, index) => (
                 <option key={index} value={category}>{category || "All"}</option>
@@ -94,15 +82,17 @@ export default function Page() {
             </select>
           </div>
         </div>
-        {filteredExpenses.map(i => (
+        {filteredExpenses.map((i) => (
           <div key={i.id} className="flex justify-between items-start mb-3">
             <div className="flex flex-col items-start">
               <p className="text-lg font-semibold">{i.description}</p>
               <small className="text-gray-500">{i.createdAt ? i.createdAt.toLocaleDateString() : "N/A"}</small>
               <p className="text-red-600 text-lg font-bold mt-2">{Currency(i.amount)}</p>
             </div>
-            <p className="text-black my-auto font-bold">{i.category}</p>
-            <MdDelete className="text-red-500 hover:text-red-700 cursor-pointer" size={20} onClick={() => handleDeleteExpense(i.id)} />
+            <div className="flex flex-row gap-x-4">
+              <p className="text-black font-bold">{i.category}</p>
+              <MdDelete className="text-red-500 hover:text-red-700 cursor-pointer" size={20} onClick={() => handleDeleteExpense(i.id)} />
+            </div>
           </div>
         ))}
       </div>

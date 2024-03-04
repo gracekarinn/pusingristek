@@ -20,8 +20,20 @@ export default function Home() {
   const dateRef = useRef();
   const [expense, showExpense] = useState([]);
   const [balance, setBalance] = useState(0);
-  
+  const [history, setHistory] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categoriesIncome, setCategoriesIncome] = useState([]);
+  const [categoriesExpense, setCategoriesExpense] = useState([]);
+  const [newCategory, setNewCategory] = useState(false);
+  const [newExpenseCategory, setNewExpenseCategory] = useState(false);
 
+  const handleAddExpenseCategory = () => {
+    setNewExpenseCategory(true);
+  };
+
+  const handleAddCategory = () => {
+    setNewCategory(true);
+  };
 
   const addIncomeHandler = async (e) => {
     e.preventDefault()
@@ -68,6 +80,8 @@ export default function Home() {
           createdAt: createdAt,
         };
       });
+      const uniqueCategories = Array.from(new Set(data.map(i => i.category).filter(Boolean)));
+      setCategoriesIncome(["", ...uniqueCategories]);
       showIncome(data);
     };
     getIncomeData();
@@ -126,34 +140,48 @@ export default function Home() {
           createdAt: createdAt,
         };
       });
+      const uniqueCategories = Array.from(new Set(data.map(e => e.category).filter(Boolean)));
+      setCategoriesExpense(["", ...uniqueCategories]);
       showExpense(data);
     };
     getExpenseData();
   }, []);
+
+  useEffect(() => {
+    const mergedHistory = [...income.map((entry) => ({ ...entry, type: 'income' })),
+                           ...expense.map((entry) => ({ ...entry, type: 'expense' }))];
+    const sortedHistory = mergedHistory.sort((a, b) => b.createdAt - a.createdAt);  
+    setHistory(sortedHistory);
+  }, [income, expense]);
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+  }
     
   return (
     <>
       <Menu show={showIncomeMenu} onClose={setshowIncomeMenu}>
         <form onSubmit={addIncomeHandler} className="flex flex-col gap-3">
           <label htmlFor="amount">Income amount</label>
-          <input 
-          ref={amountRef}
-          name="amount"
-          type="number"
-          min={10000}
-          step={1000}
-          placeholder="Enter income amount"
-          className="border-2 border-black rounded-2xl px-3"
-          required
+          <input
+            ref={amountRef}
+            name="amount"
+            type="number"
+            min={10000}
+            step={1000}
+            placeholder="Enter income amount"
+            className="border-2 border-black rounded-2xl px-3"
+            required
           />
           <label htmlFor="description">Income description</label>
-          <input 
-          ref={descriptionRef}
-          name="description"
-          type="text"
-          placeholder="Enter income description"
-          className="border-2 border-black rounded-2xl px-3 capitalize"
-          required
+          <input
+            ref={descriptionRef}
+            name="description"
+            type="text"
+            placeholder="Enter income description"
+            maxLength={15}
+            className="border-2 border-black rounded-2xl px-3"
+            required
           />
           <label htmlFor="date">Income date</label>
           <input
@@ -164,17 +192,42 @@ export default function Home() {
             required
           />
           <label className="category">Income Category</label>
-          <input
-            ref={categoryRef}
-            name="category"
-            type="input"
-            placeholder="Enter income category"
-            className="border-2 border-black rounded-2xl px-3 capitalize"
-            required
-          />
-          <button className="rounded-2xl border-black border-2 w-40 mx-auto mt-5">Submit</button>
+          <div className="flex items-center mb-2">
+            <select
+              value={selectedCategory}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md w-full mr-2"
+            >
+              {categoriesIncome.map((category, index) => (
+                <option key={index} value={category}>
+                  {category || "Select"}
+                </option>
+              ))}
+            </select>
+            <button
+            type="button"
+            onClick={handleAddCategory}
+            className="bg-blue-500 text-white text-sm py-1 rounded-xl hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300"
+            >
+            Add Category
+            </button>
+          </div>
+          {newCategory && (
+            <input
+              ref={categoryRef}
+              name="category"
+              type="text"
+              placeholder="Enter income category"
+              maxLength={15}
+              className="border-2 border-black rounded-2xl px-3 capitalize mb-2"
+              required
+            />
+          )}
+          <button className="rounded-2xl border-black border-2 w-40 mx-auto mt-2">
+            Submit
+          </button>
         </form>
-      </Menu>
+      </Menu>;
       <Menu show={showExpenseMenu} onClose={setshowExpenseMenu}>
         <form onSubmit={addExpenseHandler} className="flex flex-col gap-3">
           <label htmlFor="expense amount">Expense amount</label>
@@ -194,7 +247,8 @@ export default function Home() {
           name="description"
           type="text"
           placeholder="Enter expense description"
-          className="border-2 border-black rounded-2xl px-3 capitalize"
+          className="border-2 border-black rounded-2xl px-3"
+          maxLength={15}
           required
           />
           <label htmlFor="expense date">Expense date</label>
@@ -206,14 +260,37 @@ export default function Home() {
             required
           />
           <label className="expense category">Expense Category</label>
-          <input
-            ref={categoryExRef}
-            name="category"
-            type="input"
-            placeholder="Enter expense category"
-            className="border-2 border-black rounded-2xl px-3 capitalize"
-            required
-          />
+          <div className="flex items-center mb-2">
+            <select
+              value={selectedCategory}
+              onChange={(e) => handleAddExpenseCategorye(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md w-full mr-2"
+            >
+              {categoriesExpense.map((category, index) => (
+                <option key={index} value={category}>
+                  {category || "Select"}
+                </option>
+              ))}
+            </select>
+            <button
+            type="button"
+            onClick={handleAddExpenseCategory}
+            className="bg-red-500 text-white text-sm py-1 rounded-xl hover:bg-red-600 focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300"
+            >
+            Add Category
+            </button>
+          </div>
+          {newExpenseCategory && (
+            <input
+              ref={categoryRef}
+              name="category"
+              type="text"
+              placeholder="Enter income category"
+              maxLength={15}
+              className="border-2 border-black rounded-2xl px-3 capitalize mb-2"
+              required
+            />
+          )}
           <button className="rounded-2xl border-black border-2 w-40 mx-auto mt-5">Submit</button>
         </form>
       </Menu>
@@ -237,7 +314,7 @@ export default function Home() {
             </div>
           </div>
           {/* Button section */}
-          <div className="flex flex-row mx-auto gap-x-3 mt-10">
+          <div className="flex flex-row mx-auto gap-x-3 mt-10 mb-20">
             <button
               onClick={() => {
                 setshowIncomeMenu(true);
@@ -249,6 +326,29 @@ export default function Home() {
               }}
              className="bg-black text-white hover:bg-red-500 rounded-full p-4">Add Expense</button>
           </div>
+          {/* History section */}
+          <div className="container mx-auto p-4 md:border-2 md:border-black rounded-lg">
+            <h2 className="text-center text-black font-bold text-3xl md:text-4xl mb-4">Transaction History</h2>
+            <ul className="space-y-4">
+              {history.map((entry) => (
+                <li
+                  key={entry.id}
+                  className={`flex flex-col md:flex-row items-center justify-between p-4 rounded-md ${
+                    entry.type === 'income' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
+                  }`}
+                >
+                  <div className="flex flex-col md:flex-row items-center space-x-4 w-full">
+                    <span className={`text-lg md:text-xl ${entry.type === 'income' ? 'text-blue-700' : 'text-red-700'}`}>
+                      {entry.type === 'income' ? '+ ' : '- '}
+                      {Currency(Math.abs(entry.amount))}
+                    </span>
+                    <span className="text-gray-500 w-full md:w-1/2 text-center text-sm">{entry.description}</span>
+                  </div>
+                  <div className="text-gray-500 md:w-1/4 md:text-center text-sm">{entry.category}</div>
+                </li>
+              ))}
+            </ul>
+          </div>;
         </div>
       </main>
     </>
