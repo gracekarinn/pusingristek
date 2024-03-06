@@ -1,6 +1,6 @@
 Halo kakak-kakak!^___^
 
-Perkenalkan nama aku Grace Karin dari angkatan Gaung. Here I introduce you to my simple website called MoneyRizz. 
+Perkenalkan nama aku Grace Karin dari angkatan Gaung. Here I introduce you to my simple website called MoneyRizz (level 2)
 
 Fitur-fitur dalam website:
 - Button untuk menambahkan income dan expense
