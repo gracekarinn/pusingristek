@@ -21,11 +21,12 @@ export default function Home() {
   const [expense, showExpense] = useState([]);
   const [balance, setBalance] = useState(0);
   const [history, setHistory] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedIncomeCategory, setSelectedIncomeCategory] = useState("");
+  const [selectedExpenseCategory, setSelectedExpenseCategory] = useState("");
   const [categoriesIncome, setCategoriesIncome] = useState([]);
   const [categoriesExpense, setCategoriesExpense] = useState([]);
   const [newCategory, setNewCategory] = useState(false);
-  const [newExpenseCategory, setNewExpenseCategory] = useState(false);
+  const [newExpenseCategory, setNewExpenseCategory] = useState("");
 
   const handleAddExpenseCategory = () => {
     setNewExpenseCategory(true);
@@ -36,13 +37,18 @@ export default function Home() {
   };
 
   const addIncomeHandler = async (e) => {
-    e.preventDefault()
-  
+    e.preventDefault();
+
+    if (!selectedIncomeCategory && !newCategory) {
+      alert("Please select or add an income category");
+      return;
+    }
+
     const newIncome = {
       amount: +amountRef.current.value,
       description: descriptionRef.current.value,
       createdAt: dateRef.current.value ? new Date(dateRef.current.value) : serverTimestamp(),
-      category: categoryRef.current.value,
+      category: selectedIncomeCategory || categoryRef.current.value,
     };
 
     const collectionRef = collection(db, "income");
@@ -62,6 +68,8 @@ export default function Home() {
       descriptionRef.current.value = "";
       amountRef.current.value = "";
       dateRef.current.value = "";
+      setSelectedIncomeCategory("");
+      setNewCategory(false);
       setshowIncomeMenu(false);
     } catch (error) {
       console.log(error.message);
@@ -97,12 +105,18 @@ export default function Home() {
   }, [expense, income])
 
   const addExpenseHandler = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+
+    if (!selectedExpenseCategory && !newExpenseCategory) {
+      alert("Please select or add an expense category");
+      return;
+    }
+
     const newExpense = {
       amount: +amountExRef.current.value,
       description: descriptioExRef.current.value,
       createdAt: dateExRef.current.value ? new Date(dateExRef.current.value) : serverTimestamp(),
-      category: categoryExRef.current.value,
+      category: selectedExpenseCategory || categoryExRef.current.value,
     };
 
     const collectionExRef = collection(db, "expense");
@@ -122,6 +136,8 @@ export default function Home() {
       descriptioExRef.current.value = "";
       amountExRef.current.value = "";
       dateExRef.current.value = "";
+      setSelectedExpenseCategory("");
+      setNewExpenseCategory(false);
       setshowExpenseMenu(false);
     } catch (error) {
       console.log(error.message);
@@ -154,13 +170,47 @@ export default function Home() {
     setHistory(sortedHistory);
   }, [income, expense]);
 
-  const handleCategoryChange = (category) => {
-    setSelectedCategory(category);
+  const handleCategoryChange = (category, type) => {
+    if (type === 'income') {
+      setSelectedIncomeCategory(category);
+    } else {
+      setSelectedExpenseCategory(category);
+    }
   }
-    
+
+  const handleCloseMenu = (type) => {
+    if (type === 'income') {
+      descriptionRef.current.value = "";
+      amountRef.current.value = "";
+      dateRef.current.value = "";
+      setSelectedIncomeCategory("");
+      setNewCategory(false);
+      setshowIncomeMenu(false);
+
+      categoryRef.current.value = "";
+    } else if (type === 'expense') {
+      descriptioExRef.current.value = "";
+      amountExRef.current.value = "";
+      dateExRef.current.value = "";
+      setSelectedExpenseCategory("");
+      setNewExpenseCategory(false);
+      setshowExpenseMenu(false);
+      categoryRef.current.value = "";
+    }
+  
+    if (!selectedIncomeCategory && type === 'income') {
+      alert("Please select or add an income category!");
+    }
+  
+    if (!selectedExpenseCategory && type === 'expense') {
+      alert("Please select or add an expense category!");
+    }
+  };
+  
+     
   return (
     <>
-      <Menu show={showIncomeMenu} onClose={setshowIncomeMenu}>
+      <Menu show={showIncomeMenu} onClose={() => handleCloseMenu('income')}>
         <form onSubmit={addIncomeHandler} className="flex flex-col gap-3">
           <label htmlFor="amount">Income amount</label>
           <input
@@ -194,8 +244,8 @@ export default function Home() {
           <label className="category">Income Category</label>
           <div className="flex items-center mb-2">
             <select
-              value={selectedCategory}
-              onChange={(e) => handleCategoryChange(e.target.value)}
+              value={selectedIncomeCategory}
+              onChange={(e) => handleCategoryChange(e.target.value, 'income')}
               className="px-4 py-2 border border-gray-300 rounded-md w-full mr-2"
             >
               {categoriesIncome.map((category, index) => (
@@ -220,7 +270,6 @@ export default function Home() {
               placeholder="Enter income category"
               maxLength={15}
               className="border-2 border-black rounded-2xl px-3 capitalize mb-2"
-              required
             />
           )}
           <button className="rounded-2xl border-black border-2 w-40 mx-auto mt-2">
@@ -228,7 +277,7 @@ export default function Home() {
           </button>
         </form>
       </Menu>;
-      <Menu show={showExpenseMenu} onClose={setshowExpenseMenu}>
+      <Menu show={showExpenseMenu} onClose={() => handleCloseMenu('expense')}>
         <form onSubmit={addExpenseHandler} className="flex flex-col gap-3">
           <label htmlFor="expense amount">Expense amount</label>
           <input 
@@ -262,8 +311,8 @@ export default function Home() {
           <label className="expense category">Expense Category</label>
           <div className="flex items-center mb-2">
             <select
-              value={selectedCategory}
-              onChange={(e) => handleAddExpenseCategorye(e.target.value)}
+              value={selectedExpenseCategory}
+              onChange={(e) => handleCategoryChange(e.target.value, 'expense')}
               className="px-4 py-2 border border-gray-300 rounded-md w-full mr-2"
             >
               {categoriesExpense.map((category, index) => (
@@ -282,13 +331,12 @@ export default function Home() {
           </div>
           {newExpenseCategory && (
             <input
-              ref={categoryRef}
+              ref={categoryExRef}
               name="category"
               type="text"
               placeholder="Enter income category"
               maxLength={15}
               className="border-2 border-black rounded-2xl px-3 capitalize mb-2"
-              required
             />
           )}
           <button className="rounded-2xl border-black border-2 w-40 mx-auto mt-5">Submit</button>

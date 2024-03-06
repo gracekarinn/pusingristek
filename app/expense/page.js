@@ -89,8 +89,8 @@ export default function Page() {
               <small className="text-gray-500">{i.createdAt ? i.createdAt.toLocaleDateString() : "N/A"}</small>
               <p className="text-red-600 text-lg font-bold mt-2">{Currency(i.amount)}</p>
             </div>
+            <p className="text-black font-bold">{i.category}</p>
             <div className="flex flex-row gap-x-4">
-              <p className="text-black font-bold">{i.category}</p>
               <MdDelete className="text-red-500 hover:text-red-700 cursor-pointer" size={20} onClick={() => handleDeleteExpense(i.id)} />
             </div>
           </div>
