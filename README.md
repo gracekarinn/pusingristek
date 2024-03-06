@@ -10,4 +10,9 @@ Fitur-fitur dalam website:
 - User dapat menghapus riwayat expense/income
 - Navbar yang mengarah ke home, expense page, dan income page
 
+Kemudian, untuk tech stack yang digunakan, yaitu:
+- Firebase sebagai database
+- NextJs sebagai main development untuk website
+- Tailwind sebagai main styling
 
+Terima kasih!
